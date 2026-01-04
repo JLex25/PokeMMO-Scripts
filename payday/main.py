@@ -121,8 +121,7 @@ def fight():
 def check_shiny():
     text = screen.get_text(POS_POKEMON_NAME_X1, POS_POKEMON_NAME_Y1,
                            POS_POKEMON_NAME_X2, POS_POKEMON_NAME_Y2) # Read the Pokemon name in the screen
-    if text: 
-        '''re.search(SHINY_APEARED_TEXT_1, text) or re.search(SHINY_APEARED_TEXT_2, text): # Check if shiny appeared'''
+    if re.search(SHINY_APEARED_TEXT_1, text) or re.search(SHINY_APEARED_TEXT_2, text): # Check if shiny appeared
         print("-----------------------")
         print("Shiny Pokemon appeared!")
         print("-----------------------")
