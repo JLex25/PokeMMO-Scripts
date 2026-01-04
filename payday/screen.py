@@ -1,6 +1,6 @@
 import pyautogui
 import pytesseract
-import time
+
 
 # Constant
 LANG = 'spa' 

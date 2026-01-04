@@ -9,8 +9,8 @@ import sys
 
 
 # Constants
-PP = 32
-TIMES_FISHING_LOOP = 1
+MAX_PP = 32
+TIMES_FISHING_LOOP = 3
 
 POS_FICHING_DIALOG_X1 = 219
 POS_FICHING_DIALOG_Y1 = 138
@@ -24,16 +24,18 @@ POS_POKEMON_NAME_X2 = 500
 POS_POKEMON_NAME_Y2 = 25 
 SHINY_APEARED_TEXT_1 = r'(variocolor)'
 SHINY_APEARED_TEXT_2 = r'(shiny)'
+POKEMON_ALIVE_TEXT = r'(nv.)'
 
 
-# Instances
+# global variables
 keyboard = Controller()
+current_pp = 0
 
 
 # Functions
 def start():
     # Countdown before starting
-    print("Looping", TIMES_FISHING_LOOP, "times, fishing with", PP, "PP of Pay Day")
+    print("Looping", TIMES_FISHING_LOOP, "times, fishing with", MAX_PP, "PP of Pay Day")
     print("--------------")
     count = 5
     for i in range(count):
@@ -57,6 +59,7 @@ def hold_key(key, hold_time):
 
 
 def heal_pokemon_center_unova():
+    global current_pp
     hold_key(key.UP, rnd.uniform(1.3, 1.8)) # Up  
     for _ in range(4): # Talking to nurse
         press_key(key.A) # Confirm dialog
@@ -65,6 +68,7 @@ def heal_pokemon_center_unova():
     for _ in range(3): # End dialog
         press_key(key.B) # Confirm dialog
         time.sleep(rnd.uniform(0.5, 0.8)) # Wait for dialog
+    current_pp = MAX_PP # Refill PP after healing
        
     
 def exit_pokemon_center_unova():
@@ -74,7 +78,6 @@ def exit_pokemon_center_unova():
 
 def go_to_fishing_spot_undella_town():
     route = rnd.choice([1, 2]) # Randomly choose between two routes
-    print(f"\tUsing route {route}") 
     if route == 1: # Route 1
         go_to_fishing_spot_undella_town_1()
     elif route == 2: # Route 2
@@ -107,15 +110,39 @@ def fish():
         press_key(key.A) # Confirm dialog
         if re.search(FISH_APEARED_TEXT, text) or count >= 20: # Check if fish appeared or its an infinite loop
             break # Exit the loop      
+        time.sleep(rnd.uniform(0.5, 1)) # Wait before fishing again
     time.sleep(rnd.uniform(12, 13)) # Wait for the fish to appear
 
 
 def fight():
+    global current_pp
     check_shiny() # Check if shiny appeared
+    
+    # Use Pay Day
     press_key(key.A) # Select fight
     time.sleep(rnd.uniform(0.5, 1)) # Small wait
     press_key(key.A) # Selct Pay day
-    time.sleep(rnd.uniform(12, 13)) # Wait for the fight to end
+    current_pp -= 1 # Decrease PP
+    time.sleep(rnd.uniform(11, 12)) # Wait for the attack to finish ans opponent response
+    
+    # In case the opponent survives
+    alive = check_opponent_alive() # Check if opponent is alive
+    while alive:
+        if current_pp > 0: # Use Pay Day
+            press_key(key.A) # Select fight
+            time.sleep(rnd.uniform(0.5, 1)) # Small wait
+            press_key(key.A) # Selct Pay day
+            current_pp -= 1 # Decrease PP
+        else: # Use the other move
+            press_key(key.A) # Select fight
+            time.sleep(rnd.uniform(1, 1.5)) # Small wait
+            press_key(key.RIGHT) # Select the other move
+            time.sleep(rnd.uniform(1, 1.5)) # Small wait
+            press_key(key.A) # Confirm the other move
+        time.sleep(rnd.uniform(11, 12)) # Wait for the attack to finish ans opponent response
+        alive = check_opponent_alive() # Check if opponent is alive
+    
+    time.sleep(rnd.uniform(2, 3)) # Wait for the fight to end
     
     
 def check_shiny():
@@ -128,6 +155,15 @@ def check_shiny():
         sound.alarm() # Play alarm sound
         input("Press Enter to exit...")
         sys.exit(0) # Exit the script
+       
+        
+def check_opponent_alive():
+    text = screen.get_text(POS_POKEMON_NAME_X1, POS_POKEMON_NAME_Y1,
+                           POS_POKEMON_NAME_X2, POS_POKEMON_NAME_Y2) # Read the Pokemon name in the screen
+    if re.search(POKEMON_ALIVE_TEXT, text): # Check if opponent is alive
+        return True
+    else:
+        return False
     
 def go_back_to_pokemon_center_undella_town(route):
     if route == 1:
@@ -152,17 +188,22 @@ def go_back_to_pokemon_center_undella_town_2():
 
 # Main
 start()
+
 loopCount = 0
 while loopCount < TIMES_FISHING_LOOP:
     loopCount += 1
     print(f"Loop [{loopCount}]:")
+    
     heal_pokemon_center_unova() # Heal Pokemons
     exit_pokemon_center_unova() # Exit Pokemon center
+    
     route = go_to_fishing_spot_undella_town() # Go to fishing spot
-    for i in range(PP): # Farm until PP run out
-        print(f"\tFishing [{i + 1}]")
+    
+    while current_pp > 0: # While there is PP
         fish() # Fish until a Pokemon appears
         fight() # Fight the Pokemon
+        
     go_back_to_pokemon_center_undella_town(route) # Go to Pokemon center
     print("--------------")
+    
 input("Script finished. Press Enter to exit...")
